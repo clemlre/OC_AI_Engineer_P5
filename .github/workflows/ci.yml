@@ -12,6 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
       - run: uv sync --group dev
       - run: uv run ruff check app/ tests/
 
@@ -37,7 +39,11 @@ jobs:
       ENVIRONMENT: dev
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
       - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
 
       - name: Installer les dépendances
         run: uv sync --group dev
