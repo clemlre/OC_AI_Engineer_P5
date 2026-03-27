@@ -7,16 +7,20 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           lfs: true
 
-      - name: Push vers Hugging Face Spaces
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install huggingface_hub
+        run: pip install huggingface_hub[hf_xet]
+
+      - name: Upload to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git remote add hf https://HF_USER:$HF_TOKEN@huggingface.co/spaces/${{ secrets.HF_SPACE_NAME }}
-          git push hf HEAD:main --force
+          huggingface-cli upload clemlre/p5-attrition-api . . --repo-type space --exclude '.git*' '.venv*' '__pycache__*' '*.pyc' 'htmlcov*' '.coverage' '*.db' '.pytest_cache*'
