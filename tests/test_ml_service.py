@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
 
 from app.models.schemas import EmployeeInput
@@ -106,7 +105,7 @@ class TestGetModel:
 
         mock = MagicMock()
         with patch.object(ml_service, "load_model", return_value=mock) as mock_load:
-            result = ml_service.get_model()
+            ml_service.get_model()
             mock_load.assert_called_once()
 
         # Cleanup

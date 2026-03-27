@@ -2,11 +2,9 @@
 
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
 
 from app.main import app
 from app.models.database import get_db
-from app.services import ml_service
 
 
 class TestHealthEndpoint:

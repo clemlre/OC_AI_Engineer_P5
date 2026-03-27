@@ -4,7 +4,7 @@ import bcrypt as _bcrypt
 from sqlalchemy import text
 
 from app.models.database import get_db
-from app.models.orm import ApiKey, Prediction
+from app.models.orm import ApiKey
 from app.services.db_service import (
     get_api_key_by_hash,
     get_prediction_by_id,

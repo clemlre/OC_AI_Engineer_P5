@@ -1,6 +1,5 @@
 """Tests fonctionnels pour les endpoints de prédiction."""
 
-import pytest
 
 
 class TestPredictEndpoint:
