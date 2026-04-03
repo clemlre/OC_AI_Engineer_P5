@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["dev", "prod"] = "dev"
     API_TITLE: str = "API Prédiction Attrition"
     API_VERSION: str = "1.0.0"
+    INIT_API_KEY: str | None = None
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

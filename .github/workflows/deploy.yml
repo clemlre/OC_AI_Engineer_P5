@@ -19,6 +19,29 @@ jobs:
       - name: Install huggingface_hub
         run: pip install huggingface_hub[hf_xet]
 
+      - name: Configure HF Spaces secrets
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          INIT_API_KEY: ${{ secrets.INIT_API_KEY }}
+        run: |
+          python -c "
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi()
+          repo_id = 'clemlre/p5-attrition-api'
+
+          db_url = os.environ.get('PROD_DATABASE_URL', '')
+          if db_url:
+              api.add_space_secret(repo_id=repo_id, key='DATABASE_URL', value=db_url)
+              print('DATABASE_URL secret set')
+
+          init_key = os.environ.get('INIT_API_KEY', '')
+          if init_key:
+              api.add_space_secret(repo_id=repo_id, key='INIT_API_KEY', value=init_key)
+              print('INIT_API_KEY secret set')
+          "
+
       - name: Upload to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
