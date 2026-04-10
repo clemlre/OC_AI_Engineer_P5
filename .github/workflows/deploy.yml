@@ -40,6 +40,9 @@ jobs:
           if init_key:
               api.add_space_secret(repo_id=repo_id, key='INIT_API_KEY', value=init_key)
               print('INIT_API_KEY secret set')
+
+          api.add_space_secret(repo_id=repo_id, key='ENVIRONMENT', value='prod')
+          print('ENVIRONMENT secret set')
           "
 
       - name: Upload to Hugging Face Spaces

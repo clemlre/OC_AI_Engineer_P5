@@ -5,7 +5,7 @@ from typing import Literal
 class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./attrition.db"
     MODEL_PATH: str = "ml_models/best_rf_model.joblib"
-    ENVIRONMENT: Literal["dev", "prod"] = "dev"
+    ENVIRONMENT: Literal["dev", "prod"] = "prod"
     API_TITLE: str = "API Prédiction Attrition"
     API_VERSION: str = "1.0.0"
     INIT_API_KEY: str | None = None
