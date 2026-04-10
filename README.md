@@ -7,32 +7,32 @@ sdk: docker
 app_port: 7860
 ---
 
-# API Prediction Attrition Employes
+# API de Prédiction d'Attrition des Employés
 
-API de prediction d'attrition des employes, developpee avec FastAPI. Utilise un modele Random Forest entraine sur des donnees RH, d'evaluation et de sondage pour predire si un employe va quitter l'entreprise.
+API de prédiction d'attrition des employés, développée avec FastAPI. Utilise un modèle Random Forest entraîné sur des données RH, d'évaluation et de sondage pour prédire si un employé va quitter l'entreprise.
 
-**Projet P5 - OpenClassrooms - Data Scientist** | Clement Loire
+**Projet P5 - OpenClassrooms - AI Engineer** | Clément Loire
 
-## Table des matieres
+## Table des matières
 
-- [Contexte metier](#contexte-metier)
+- [Contexte métier](#contexte-métier)
 - [Architecture](#architecture)
 - [Installation](#installation)
 - [Utilisation de l'API](#utilisation-de-lapi)
-- [Authentification et securite](#authentification-et-securite)
-- [Base de donnees](#base-de-donnees)
+- [Authentification et sécurité](#authentification-et-sécurité)
+- [Base de données](#base-de-données)
 - [Tests](#tests)
-- [Deploiement](#deploiement)
-- [Modele ML](#modele-ml)
+- [Déploiement](#déploiement)
+- [Modèle ML](#modèle-ml)
 - [CI/CD](#cicd)
 
-## Contexte metier
+## Contexte métier
 
-Futurisys, entreprise innovante, souhaite rendre son modele de prediction d'attrition operationnel et accessible via une API performante. Ce POC permet de :
+Futurisys, entreprise innovante, souhaite rendre son modèle de prédiction d'attrition opérationnel et accessible via une API performante. Ce POC permet de :
 
-- **Predire** si un employe risque de quitter l'entreprise
-- **Tracer** toutes les predictions via une base de donnees PostgreSQL
-- **Securiser** l'acces via un systeme d'authentification par cle API
+- **Prédire** si un employé risque de quitter l'entreprise
+- **Tracer** toutes les prédictions via une base de données (SQLite en dev, PostgreSQL Neon en prod)
+- **Sécuriser** l'accès via un système d'authentification par clé API
 
 ## Architecture
 
@@ -40,26 +40,26 @@ Futurisys, entreprise innovante, souhaite rendre son modele de prediction d'attr
 Client (curl/Postman/App)
     |
     v
-[X-API-Key Header] --> Verification bcrypt
+[X-API-Key Header] --> Vérification bcrypt
     |
     v
 FastAPI (app/main.py)
     |
-    +-- GET /health          --> Etat API + modele + DB
-    +-- POST /api/v1/predict --> Prediction + log en DB
-    +-- GET /api/v1/predictions --> Historique predictions
-    +-- GET /api/v1/predictions/{id} --> Detail prediction
+    +-- GET /health          --> État API + modèle + DB
+    +-- POST /api/v1/predict --> Prédiction + log en DB
+    +-- GET /api/v1/predictions --> Historique prédictions
+    +-- GET /api/v1/predictions/{id} --> Détail prédiction
     |
     v
 ML Service (app/services/ml_service.py)
-    |-- prepare_input() : feature engineering
+    |-- prepare_input() : feature engineering (4 transformations)
     |-- predict()       : pipeline.predict() + predict_proba()
     |
     v
-PostgreSQL / SQLite
-    |-- employees    : dataset complet
+SQLite (dev/CI) / PostgreSQL Neon (prod)
+    |-- employees    : dataset RH complet (1 470 lignes)
     |-- predictions  : log des appels API
-    |-- api_keys     : cles d'acces hashees
+    |-- api_keys     : clés d'accès hashées (bcrypt)
 ```
 
 ### Structure du projet
@@ -67,57 +67,57 @@ PostgreSQL / SQLite
 ```
 api/
 +-- app/
-|   +-- main.py              # Application FastAPI
+|   +-- main.py              # Application FastAPI + lifespan
 |   +-- config.py             # Configuration (pydantic-settings)
 |   +-- models/
-|   |   +-- schemas.py        # Schemas Pydantic (validation)
-|   |   +-- database.py       # SQLAlchemy engine + session
-|   |   +-- orm.py            # Modeles ORM (tables)
+|   |   +-- schemas.py        # Schémas Pydantic v2 (validation 27 champs)
+|   |   +-- database.py       # SQLAlchemy 2.0 engine + session
+|   |   +-- orm.py            # Modèles ORM (3 tables, Mapped[type])
 |   +-- routers/
 |   |   +-- health.py         # GET /health
-|   |   +-- predictions.py    # Endpoints predictions
+|   |   +-- predictions.py    # Endpoints prédictions
 |   +-- services/
-|   |   +-- ml_service.py     # Chargement modele + prediction
-|   |   +-- db_service.py     # Operations DB
+|   |   +-- ml_service.py     # Chargement modèle + feature engineering + prédiction
+|   |   +-- db_service.py     # Opérations DB (CRUD)
 |   +-- middleware/
-|       +-- auth.py           # Authentification API key
+|       +-- auth.py           # Authentification API Key (bcrypt)
 +-- ml_models/
-|   +-- best_rf_model.joblib  # Modele Random Forest
+|   +-- best_rf_model.joblib  # Modèle Random Forest (imblearn Pipeline)
 +-- data/                     # CSV bruts (SIRH, Eval, Sondage)
 +-- scripts/
-|   +-- init_db.py            # Initialisation DB + dataset
-|   +-- create_db.sql         # Script SQL alternatif
-+-- tests/                    # Tests Pytest
-+-- .github/workflows/        # CI/CD GitHub Actions
-+-- Dockerfile                # Conteneur Docker
-+-- docker-compose.yml        # PostgreSQL + API
+|   +-- init_db.py            # Initialisation DB + fusion CSV + seed API key
+|   +-- create_db.sql         # Script SQL alternatif (PostgreSQL, CHECK, INDEX)
++-- tests/                    # 54 tests Pytest (100% couverture)
++-- .github/workflows/        # CI/CD GitHub Actions (ci.yml + deploy.yml)
++-- Dockerfile                # Conteneur Docker (python:3.11-slim + uv)
++-- docker-compose.yml        # Environnement local (SQLite)
++-- README_BDD.md             # Documentation détaillée de la base de données
 ```
 
 ## Installation
 
-### Prerequis
+### Prérequis
 
 - Python >= 3.11
 - [uv](https://docs.astral.sh/uv/) (gestionnaire de paquets)
-- PostgreSQL 16+ (ou Docker)
 
 ### Installation locale
 
 ```bash
-# 1. Cloner le depot
-git clone https://github.com/<user>/api.git
+# 1. Cloner le dépôt
+git clone https://github.com/clemlre/OC_AI_Engineer_P5.git
 cd api
 
-# 2. Installer les dependances
+# 2. Installer les dépendances
 uv sync --group dev
 
 # 3. Configurer l'environnement
 cp .env.example .env
-# Editer .env avec vos parametres (DATABASE_URL, etc.)
+# Éditer .env avec vos paramètres (DATABASE_URL, etc.)
 
-# 4. Initialiser la base de donnees
+# 4. Initialiser la base de données
 uv run python scripts/init_db.py
-# Note : la cle API generee s'affiche dans le terminal, conservez-la !
+# Note : la clé API générée s'affiche dans le terminal, conservez-la !
 
 # 5. Lancer le serveur
 uv run uvicorn app.main:app --reload --port 8567
@@ -126,7 +126,7 @@ uv run uvicorn app.main:app --reload --port 8567
 ### Installation avec Docker
 
 ```bash
-# Lancer PostgreSQL + API
+# Lancer l'API (SQLite par défaut)
 docker-compose up --build
 
 # L'API est accessible sur http://localhost:8567
@@ -137,19 +137,19 @@ docker-compose up --build
 
 ### Documentation interactive
 
-Une fois le serveur lance, accedez a :
+Une fois le serveur lancé, accédez à :
 - **Swagger UI** : `http://localhost:8567/docs`
 - **ReDoc** : `http://localhost:8567/redoc`
 
 ### Exemples d'appels
 
-#### Verifier l'etat de l'API
+#### Vérifier l'état de l'API
 
 ```bash
 curl http://localhost:8567/health
 ```
 
-Reponse :
+Réponse :
 ```json
 {
   "status": "ok",
@@ -159,7 +159,7 @@ Reponse :
 }
 ```
 
-#### Effectuer une prediction
+#### Effectuer une prédiction
 
 ```bash
 curl -X POST http://localhost:8567/api/v1/predict \
@@ -196,7 +196,7 @@ curl -X POST http://localhost:8567/api/v1/predict \
   }'
 ```
 
-Reponse :
+Réponse :
 ```json
 {
   "prediction_id": 1,
@@ -207,51 +207,67 @@ Reponse :
 }
 ```
 
-#### Consulter l'historique des predictions
+#### Consulter l'historique des prédictions
 
 ```bash
 curl http://localhost:8567/api/v1/predictions \
   -H "X-API-Key: VOTRE_CLE_API"
 ```
 
-#### Consulter le detail d'une prediction
+#### Consulter le détail d'une prédiction
 
 ```bash
 curl http://localhost:8567/api/v1/predictions/1 \
   -H "X-API-Key: VOTRE_CLE_API"
 ```
 
-## Authentification et securite
+## Authentification et sécurité
 
-### Systeme d'authentification
+### Choix du système d'authentification
 
-L'API utilise un systeme d'**authentification par cle API** via le header `X-API-Key` :
+L'API utilise un système d'**authentification par clé API** via le header HTTP `X-API-Key`, associé à un hachage **bcrypt** en base de données.
 
-1. Les cles sont generees lors de l'initialisation (`scripts/init_db.py`)
-2. Elles sont stockees **hashees avec bcrypt** dans la table `api_keys`
-3. Chaque requete authentifiee est verifiee contre les hashs en base
-4. Les cles peuvent etre desactivees (`is_active = false`)
+Ce choix est motivé par le contexte du projet (POC interne pour Futurisys) :
 
-### Bonnes pratiques de securite
+- **Clé API plutôt qu'OAuth2/JWT** : le POC n'a pas de notion de sessions utilisateur ni de scopes d'autorisation. Une clé API unique par consommateur est suffisante et plus simple à intégrer pour un premier déploiement. OAuth2 serait pertinent si l'API devait gérer plusieurs niveaux d'accès ou des tokens à durée limitée.
+- **bcrypt plutôt que SHA-256** : bcrypt intègre un salt aléatoire et un coût de calcul adaptatif (work factor), ce qui le rend résistant aux attaques par dictionnaire et par force brute. Un hash SHA-256 serait vulnérable aux rainbow tables sans salt explicite. De plus, bcrypt empêche toute recherche directe en base (`WHERE hash = ?`) car deux hachages de la même clé produisent des résultats différents.
+- **Itération sur toutes les clés actives** : la vérification parcourt les clés actives avec `bcrypt.checkpw()` une par une. C'est acceptable pour un POC avec peu de clés. En production à grande échelle, une architecture avec un préfixe de clé en clair (pour filtrer) + hash bcrypt du reste serait plus performante.
 
-| Mesure | Implementation |
+### Flux d'authentification
+
+1. Le client envoie sa clé brute dans le header `X-API-Key`
+2. Le middleware `auth.py` charge tous les hashs actifs depuis la table `api_keys`
+3. Pour chaque hash, `bcrypt.checkpw(clé_brute, hash)` est appelé
+4. Si un match est trouvé, la requête est autorisée et le hash est loggé dans `predictions.api_key_used`
+5. Si aucun match, HTTP 401 Unauthorized
+
+### Bonnes pratiques de sécurité
+
+| Mesure | Implémentation |
 |--------|---------------|
-| **Hachage des cles** | bcrypt (resistant aux attaques par force brute) |
-| **Validation des entrees** | Pydantic avec contraintes de type, bornes et enums |
-| **Protection injection SQL** | SQLAlchemy ORM (requetes parametrees) |
-| **Gestion des secrets** | Variables d'environnement (`.env`), pas de secrets dans le code |
-| **CORS** | Middleware configurable |
-| **HTTPS** | Recommande en production (gere par le reverse proxy) |
+| **Hachage des clés** | bcrypt 4.0+ avec salt aléatoire automatique |
+| **Validation des entrées** | Pydantic v2 avec contraintes de type, bornes (`Field(ge=, le=)`) et enums (`Literal`) |
+| **Protection injection SQL** | SQLAlchemy ORM avec requêtes paramétrées (aucun SQL brut) |
+| **Gestion des secrets** | Variables d'environnement (`.env` exclu par `.gitignore`), GitHub Secrets pour CI/CD, `HfApi.add_space_secret()` pour la prod |
+| **CORS** | Middleware FastAPI configurable (`allow_origins`) |
+| **HTTPS** | Géré par la plateforme Hugging Face Spaces en production |
 
-### Gestion des acces
+### Gestion des accès
 
-- Chaque appel API est trace avec le hash de la cle utilisee
-- Les cles inactives sont automatiquement rejetees (HTTP 401)
+- Chaque appel API est tracé avec le hash de la clé utilisée (colonne `api_key_used`)
+- Les clés inactives sont automatiquement rejetées (HTTP 401)
 - Le endpoint `/health` est public (pas d'authentification requise)
+- Les clés sont générées via `secrets.token_urlsafe(32)` ou fournies par la variable `INIT_API_KEY`
 
-## Base de donnees
+### Données personnelles
 
-### Schema UML
+Le dataset contient des données RH (âge, genre, salaire, département) qui, dans un contexte réel, constitueraient des données personnelles au sens du RGPD. Les mesures de protection mises en place (authentification, hachage, absence de données nominatives, logs d'accès) constituent un socle minimal de sécurité. En production, un registre de traitements et une analyse d'impact (DPIA) seraient à prévoir.
+
+## Base de données
+
+> Documentation détaillée : voir [`README_BDD.md`](README_BDD.md)
+
+### Schéma (3 tables)
 
 ```
 +------------------+     +------------------+     +------------------+
@@ -270,24 +286,21 @@ L'API utilise un systeme d'**authentification par cle API** via le header `X-API
 +------------------+
 ```
 
-### Processus de stockage et gestion des donnees
+### Architecture dual-engine
 
-1. **Initialisation** : le script `init_db.py` charge les 3 CSV bruts (SIRH, Evaluation, Sondage), les fusionne et insere le dataset complet (1470 employes) dans la table `employees`
-2. **Predictions** : chaque appel `POST /predict` enregistre automatiquement les donnees d'entree (JSONB) et la sortie du modele dans la table `predictions`
-3. **Tracabilite** : la cle API utilisee (hashee) et le timestamp sont enregistres pour chaque prediction
+Le code applicatif est **100% agnostique du moteur** grâce à SQLAlchemy 2.0. Seule la variable `DATABASE_URL` change entre les environnements :
 
-### Besoins analytiques
+| Environnement | Moteur | Configuration |
+|---|---|---|
+| **Dev / Docker** | SQLite | `sqlite:///./attrition.db` (fichier local) |
+| **CI (GitHub Actions)** | SQLite | `sqlite:///./test.db` (éphémère) |
+| **Prod (HF Spaces)** | PostgreSQL Neon | URL injectée via `HfApi.add_space_secret()` |
 
-La table `predictions` permet de :
-- Suivre le volume de predictions dans le temps
-- Analyser la distribution des predictions (Reste vs Quitte)
-- Auditer les appels par cle API
-- Comparer les entrees aux donnees du dataset original (`employees`)
+### Processus de stockage
 
-### Compatibilite
-
-- **Local / Docker** : PostgreSQL 16 (via `docker-compose.yml`)
-- **Hugging Face Spaces** : SQLite en fallback (meme code SQLAlchemy, seul `DATABASE_URL` change)
+1. **Initialisation** : le script `init_db.py` charge les 3 CSV bruts (SIRH, Évaluation, Sondage), les fusionne via `pd.merge()` et insère les 1 470 employés dans la table `employees`
+2. **Prédictions** : chaque appel `POST /predict` enregistre automatiquement les données d'entrée (JSON) et la sortie du modèle dans la table `predictions`
+3. **Traçabilité** : la clé API utilisée (hashée) et le timestamp UTC sont enregistrés pour chaque prédiction
 
 ## Tests
 
@@ -302,103 +315,129 @@ uv run pytest --cov=app --cov-report=html
 # Rapport disponible dans htmlcov/index.html
 ```
 
-### Couverture
+### Couverture (54 tests, 240 statements, 100%)
 
-| Module | Couverture |
-|--------|-----------|
-| `app/config.py` | 100% |
-| `app/main.py` | 100% |
-| `app/middleware/auth.py` | 93% |
-| `app/models/orm.py` | 100% |
-| `app/models/schemas.py` | 100% |
-| `app/routers/predictions.py` | 100% |
-| `app/services/ml_service.py` | 97% |
-| `app/services/db_service.py` | 93% |
-| **TOTAL** | **95%** |
+| Module | Statements | Missing | Couverture |
+|--------|-----------|---------|-----------|
+| `app/config.py` | 10 | 0 | 100% |
+| `app/main.py` | 16 | 0 | 100% |
+| `app/middleware/auth.py` | 15 | 0 | 100% |
+| `app/models/database.py` | 12 | 0 | 100% |
+| `app/models/orm.py` | 52 | 0 | 100% |
+| `app/models/schemas.py` | 45 | 0 | 100% |
+| `app/routers/health.py` | 22 | 0 | 100% |
+| `app/routers/predictions.py` | 22 | 0 | 100% |
+| `app/services/db_service.py` | 14 | 0 | 100% |
+| `app/services/ml_service.py` | 32 | 0 | 100% |
+| **TOTAL** | **240** | **0** | **100%** |
 
-### Types de tests
+### Répartition des 54 tests par module
 
-- **Tests unitaires** : validation Pydantic, feature engineering, operations DB
-- **Tests fonctionnels** : endpoints API (predict, list, detail), authentification
-- **44 tests** couvrant les cas critiques et les scenarios d'erreur
+| Fichier | Tests | Périmètre |
+|---------|-------|-----------|
+| `test_schemas.py` | 15 | Validation Pydantic : typage, bornes, enums, regex, champs requis |
+| `test_ml_service.py` | 11 | Feature engineering : nettoyage %, mapping ordinal, 3 ratios, singleton modèle |
+| `test_predictions.py` | 10 | Endpoints REST : prédiction valide, champ manquant, catégorie invalide, hors bornes, pagination, 404 |
+| `test_db.py` | 9 | Opérations CRUD : insert, select, pagination, préservation JSON, clé API par hash |
+| `test_auth.py` | 6 | Authentification : sans clé (422), clé invalide (401), clé valide, /health sans auth, hachage bcrypt |
+| `test_health.py` | 3 | Health check : nominal, modèle non chargé, base de données indisponible |
 
-## Deploiement
+### Stratégie d'isolation des tests
+
+- **Base de données dédiée** : SQLite `test.db` avec `create_all()` / `drop_all()` par session de test (chaque test part d'un état propre)
+- **Injection de dépendances (DI Override)** : `app.dependency_overrides[get_db]` remplace la session de production par la session de test
+- **Mock du modèle ML** : `MagicMock` avec `predict=[1]` et `predict_proba=[[0.15, 0.85]]` pour isoler les tests API du modèle réel (pas de dépendance au fichier `.joblib`)
+
+### Scénarios d'erreur testés
+
+- Requête sans header `X-API-Key` (HTTP 422)
+- Clé API invalide (HTTP 401)
+- Champ requis manquant dans le body (HTTP 422)
+- Valeur catégorielle invalide (HTTP 422)
+- Valeur numérique hors bornes (HTTP 422)
+- Body vide (HTTP 422)
+- Prédiction inexistante par ID (HTTP 404)
+- Base de données indisponible (health check `db_connected: false`)
+- Modèle ML non chargé (health check `model_loaded: false`)
+
+## Déploiement
 
 ### Hugging Face Spaces
 
-Le deploiement sur HF Spaces est automatise via GitHub Actions :
+Le déploiement sur HF Spaces est automatisé via GitHub Actions :
 
-1. Creer un Space Docker sur [huggingface.co/spaces](https://huggingface.co/spaces)
-2. Configurer les secrets GitHub :
-   - `HF_TOKEN` : token d'acces Hugging Face
-   - `HF_SPACE_NAME` : `<user>/api`
-3. Pousser un tag : `git tag v1.0.0 && git push --tags`
-4. Le workflow `deploy.yml` pousse automatiquement vers HF Spaces
+1. Créer un Space Docker sur [huggingface.co/spaces](https://huggingface.co/spaces)
+2. Configurer les secrets GitHub : `HF_TOKEN`, `PROD_DATABASE_URL`, `INIT_API_KEY`
+3. Pousser un tag : `git tag v1.0.x && git push --tags`
+4. Le workflow `deploy.yml` injecte les secrets sur HF Spaces via `HfApi.add_space_secret()` puis uploade le code via `HfApi.upload_folder()`
 
 ### Variables d'environnement
 
-| Variable | Description | Defaut |
+| Variable | Description | Défaut |
 |----------|-------------|--------|
-| `DATABASE_URL` | URL de connexion PostgreSQL ou SQLite | `sqlite:///./attrition.db` |
-| `MODEL_PATH` | Chemin vers le modele joblib | `ml_models/best_rf_model.joblib` |
-| `ENVIRONMENT` | Environnement (`dev` ou `prod`) | `dev` |
-| `INIT_API_KEY` | Cle API initiale (utilisee par init_db.py) | generee aleatoirement |
+| `DATABASE_URL` | URL de connexion SQLite ou PostgreSQL | `sqlite:///./attrition.db` |
+| `MODEL_PATH` | Chemin vers le modèle joblib | `ml_models/best_rf_model.joblib` |
+| `ENVIRONMENT` | Environnement (`dev` ou `prod`) | `prod` |
+| `INIT_API_KEY` | Clé API initiale (utilisée par `init_db.py`) | Générée aléatoirement si absente |
 
-## Modele ML
+## Modèle ML
 
 ### Description
 
 - **Algorithme** : Random Forest Classifier (scikit-learn + imblearn)
-- **Objectif** : predire si un employe va quitter l'entreprise (`a_quitte_l_entreprise`)
+- **Objectif** : prédire si un employé va quitter l'entreprise (`a_quitte_l_entreprise`)
 - **Pipeline** : ColumnTransformer (StandardScaler + OrdinalEncoder + OneHotEncoder) -> SMOTE -> RandomForest
 
 ### Performance (jeu de test)
 
-| Metrique | Valeur |
+| Métrique | Valeur |
 |----------|--------|
 | Accuracy | ~82% |
 | Precision (classe positive) | ~43% |
 | Recall (classe positive) | ~40% |
 | F1-Score (classe positive) | ~0.42 |
 
-### Features d'entree (25 champs bruts + 3 engineeres)
+### Features d'entrée (27 champs bruts -> 30 features)
 
-Le modele attend 25 champs bruts issus de 3 sources de donnees (SIRH, Evaluation, Sondage). Le service ML calcule automatiquement 3 features supplementaires :
-- `ratio_anciennete_age` = annees_entreprise / age
-- `ratio_stabilite_poste` = annees_poste / annees_entreprise
-- `revenu_par_annee_age` = revenu_mensuel / age
+Le modèle attend 27 champs bruts issus de 3 sources de données (SIRH, Évaluation, Sondage). Le service ML (`ml_service.py`) applique 4 transformations avant l'inférence :
 
-### Serialisation
+1. **Nettoyage** : conversion des pourcentages (`"15 %"` -> `15.0`)
+2. **Mapping ordinal** : encodage des fréquences (`"Aucun"` -> 0, `"Occasionnel"` -> 1, `"Fréquent"` -> 2)
+3. **Feature engineering** : calcul de 3 ratios (`ratio_ancienneté_age`, `ratio_stabilité_poste`, `revenu_par_année_age`)
+4. **Ordonnancement** : réarrangement des colonnes selon `FEATURE_ORDER` (30 colonnes dans l'ordre exact attendu par le pipeline)
 
-Le modele est sauvegarde au format **joblib** (recommande par scikit-learn pour la serialisation d'objets numpy volumineux).
+### Sérialisation
+
+Le modèle est sauvegardé au format **joblib** (recommandé par scikit-learn) et chargé en **singleton** (une seule fois au démarrage via `get_model()`).
 
 ## CI/CD
 
-### Pipeline d'integration continue (`ci.yml`)
+### Pipeline d'intégration continue (`ci.yml`)
 
-Declenche sur : push vers `main`/`develop`, pull requests vers `main`
+Déclenché sur : push vers `main`/`develop`, pull requests vers `main`
 
-1. **Lint** : verification du code avec `ruff`
-2. **Tests** : execution de pytest avec PostgreSQL (service container)
-3. **Couverture** : rapport XML uploade en artifact
+1. **Lint** : vérification du code avec `ruff check app/ tests/`
+2. **Tests** : exécution de `pytest` avec SQLite éphémère (`DATABASE_URL=sqlite:///./test.db`)
+3. **Couverture** : rapport XML uploadé en artifact GitHub
 
-### Pipeline de deploiement (`deploy.yml`)
+### Pipeline de déploiement (`deploy.yml`)
 
-Declenche sur : push de tag `v*`
+Déclenché sur : push de tag `v*`
 
-1. Push automatique vers Hugging Face Spaces
+1. Injection des secrets sur HF Spaces (`DATABASE_URL`, `INIT_API_KEY`, `ENVIRONMENT`) via `HfApi.add_space_secret()`
+2. Upload du code vers HF Spaces via `HfApi.upload_folder()` (contourne la limitation git push avec LFS)
 
 ### Gestion des environnements
 
-| Environnement | Base de donnees | Declencheur |
+| Environnement | Base de données | Déclencheur |
 |--------------|-----------------|-------------|
-| **dev** | SQLite locale | `uv run uvicorn` |
-| **test** | SQLite en memoire / PostgreSQL CI | `uv run pytest` |
-| **prod** | PostgreSQL (Docker) ou SQLite (HF) | Tag `v*` |
+| **dev** | SQLite locale (`attrition.db`) | `uv run uvicorn` |
+| **CI** | SQLite éphémère (`test.db`) | push main/develop, PR main |
+| **prod** | PostgreSQL Neon (cloud) | Tag `v*` -> deploy.yml |
 
 ### Secrets
 
-Les secrets sont geres via :
-- **Localement** : fichier `.env` (non commite, dans `.gitignore`)
-- **CI/CD** : GitHub Secrets (`HF_TOKEN`, `HF_SPACE_NAME`)
-- **Docker** : variables d'environnement dans `docker-compose.yml`
+Les secrets sont gérés via :
+- **Localement** : fichier `.env` (non commité, exclu par `.gitignore`)
+- **CI/CD** : GitHub Secrets (`HF_TOKEN`, `PROD_DATABASE_URL`, `INIT_API_KEY`)
+- **Production** : injection via `HfApi.add_space_secret()` dans le workflow de déploiement
